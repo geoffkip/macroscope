@@ -123,16 +123,41 @@ export const getMealsByDate = async (date) => {
     }
 };
 
+export const updateMeal = async (id, newAnalysis) => {
+    if (Platform.OS === 'web') {
+        const meals = await WebDB.getMeals();
+        const index = meals.findIndex(m => m.id === id);
+        if (index !== -1) {
+            // Keep existing fields, update data & analysis
+            // We store data as string in web mock too
+            meals[index].data = JSON.stringify(newAnalysis);
+            meals[index].analysis = newAnalysis;
+            await WebDB.saveMeals(meals);
+        }
+    } else {
+        const database = await initNativeDB();
+        if (!database) throw new Error("Database not initialized");
+
+        await database.runAsync(
+            'UPDATE meals SET data = ? WHERE id = ?',
+            JSON.stringify(newAnalysis),
+            id
+        );
+    }
+};
+
 export const deleteMeal = async (id) => {
     if (Platform.OS === 'web') {
         let meals = await WebDB.getMeals();
         meals = meals.filter(m => m.id !== id);
         await WebDB.saveMeals(meals);
     } else {
-        const database = await initNativeDB(); // Kept initNativeDB as initDB is not defined elsewhere
+        const database = await initNativeDB();
+        if (!database) throw new Error("Database not initialized");
+
         try {
             console.log("Deleting meal with ID:", id);
-            await database.runAsync('DELETE FROM meals WHERE id = ?', [id]);
+            await database.runAsync('DELETE FROM meals WHERE id = ?', id);
         } catch (error) {
             console.error("Failed to delete meal:", error);
             throw error;

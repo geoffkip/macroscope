@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { Plus, Trash2, Image as ImageIcon } from 'lucide-react-native';
+import { Plus, Trash2, Image as ImageIcon, Edit2 } from 'lucide-react-native';
 import FoodItem from './FoodItem';
 
-const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, isLoading }) => {
+const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, onRefine, isLoading }) => {
     const sectionTotals = meals.reduce((acc, meal) => {
         if (meal.analysis && meal.analysis.total) {
             acc.calories += meal.analysis.total.calories || 0;
@@ -21,23 +21,6 @@ const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, isLoad
                     <Text className="text-xs text-gray-500">
                         {sectionTotals.calories} kcal • {sectionTotals.protein}p • {sectionTotals.carbs}c • {sectionTotals.fats}f
                     </Text>
-                </View>
-                <View className="flex-row gap-2">
-                    <TouchableOpacity
-                        onPress={onUploadPhoto}
-                        disabled={isLoading}
-                        className={`items-center justify-center bg-gray-100 w-8 h-8 rounded-full ${isLoading ? 'opacity-50' : ''}`}
-                    >
-                        <ImageIcon size={16} color="#4b5563" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={onAddPhoto}
-                        disabled={isLoading}
-                        className={`flex-row items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full ${isLoading ? 'opacity-50' : ''}`}
-                    >
-                        <Plus size={16} color="#2563eb" />
-                        <Text className="text-sm font-medium text-blue-600">Camera</Text>
-                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -65,13 +48,22 @@ const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, isLoad
                                 )}
                             </View>
 
-                            <TouchableOpacity
-                                onPress={() => onDelete(meal.id)}
-                                className="absolute top-2 right-2 p-2 bg-red-50 rounded-full z-50"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Trash2 size={16} color="#ef4444" />
-                            </TouchableOpacity>
+                            <View className="absolute top-2 right-2 flex-row gap-2 z-50">
+                                <TouchableOpacity
+                                    onPress={() => onRefine(meal)}
+                                    className="p-2 bg-blue-50 rounded-full"
+                                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                                >
+                                    <Edit2 size={16} color="#2563eb" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => onDelete(meal.id)}
+                                    className="p-2 bg-red-50 rounded-full"
+                                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                                >
+                                    <Trash2 size={16} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     ))
                 )}

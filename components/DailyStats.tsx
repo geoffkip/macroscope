@@ -20,15 +20,16 @@ const StatBar = ({ label, current, target, colorClass, bgClass }) => {
     );
 };
 
-const DailyStats = ({ totals }) => {
-    const targets = {
-        calories: 2000,
-        protein: 150,
-        carbs: 200,
-        fats: 70
+const DailyStats = ({ totals, targets }) => {
+    // Fallback defaults if targets aren't loaded yet
+    const safeTargets = {
+        calories: parseInt(targets?.calories) || 2000,
+        protein: parseInt(targets?.protein) || 150,
+        carbs: parseInt(targets?.carbs) || 200,
+        fats: parseInt(targets?.fats) || 70
     };
 
-    const caloricPercentage = Math.min(100, Math.max(0, (totals.calories / targets.calories) * 100));
+    const caloricPercentage = Math.min(100, Math.max(0, (totals.calories / safeTargets.calories) * 100));
 
     return (
         <View className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
@@ -47,9 +48,9 @@ const DailyStats = ({ totals }) => {
                 </View>
 
                 <View className="flex-1 ml-6">
-                    <StatBar label="Protein" current={totals.protein} target={targets.protein} colorClass="bg-orange-500" bgClass="bg-orange-100" />
-                    <StatBar label="Carbs" current={totals.carbs} target={targets.carbs} colorClass="bg-green-500" bgClass="bg-green-100" />
-                    <StatBar label="Fats" current={totals.fats} target={targets.fats} colorClass="bg-yellow-500" bgClass="bg-yellow-100" />
+                    <StatBar label="Protein" current={totals.protein} target={safeTargets.protein} colorClass="bg-orange-500" bgClass="bg-orange-100" />
+                    <StatBar label="Carbs" current={totals.carbs} target={safeTargets.carbs} colorClass="bg-green-500" bgClass="bg-green-100" />
+                    <StatBar label="Fats" current={totals.fats} target={safeTargets.fats} colorClass="bg-yellow-500" bgClass="bg-yellow-100" />
                 </View>
             </View>
         </View>
