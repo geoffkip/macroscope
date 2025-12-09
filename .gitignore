@@ -31,13 +31,13 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
-# typescript
-*.tsbuildinfo
+# builds
+*.apk
+*.aab
 
-app-example
-
-# generated native folders
+# generated native folders (Keep these ignored for Managed Workflow, un-ignore if Ejecting)
 /ios
 /android

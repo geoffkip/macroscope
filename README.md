@@ -1,50 +1,73 @@
-# Welcome to your Expo app 👋
+# 🍎 MacroScope
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**MacroScope** is an intelligent, offline-first food tracking application powered by **Gemini 2.5 Flash**. It allows users to instantly analyze food by taking a photo or uploading an image, providing detailed macronutrient breakdowns and helping you stay on top of your nutrition goals.
 
-## Get started
+<div align="center">
+  <!-- You can add a screenshot here later -->
+  <img src="./assets/images/icon.png" width="100" />
+</div>
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+- **📸 Snap & Track**: Instantly analyze meals using your camera.
+- **🖼️ Image Upload**: Analyze existing photos from your gallery.
+- **🧠 AI-Powered**: Uses **Gemini 2.5 Flash** for high-accuracy food recognition and macronutrient estimation (Calories, Protein, Carbs, Fats).
+- **📏 Quantity Detection**: Automatically detects portion sizes (e.g., "2 slices", "1 cup").
+- **🔒 Offline-First**: Uses **SQLite** on Android for persistent, local storage. No internet required to view your history.
+- **📊 Daily Stats**: Visual progress bars for your daily macro goals.
+- **🚀 Native Performance**: Built with **React Native** & **Expo** for a smooth, native experience.
 
-2. Start the app
+## 🛠️ Tech Stack
 
-   ```bash
-   npx expo start
-   ```
+- **Framework**: React Native (Expo)
+- **AI Model**: Gemini 2.5 Flash
+- **Styling**: NativeWind (Tailwind CSS)
+- **Database**: 
+  - **Android**: `expo-sqlite` (Native persistent storage)
+  - **Web**: `localStorage` (Cross-platform compatibility)
+- **Camera**: `expo-camera`
 
-In the output, you'll find options to open the app in a
+## 🚀 Getting Started
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Prerequisites
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Node.js & npm
+- Android Studio (for native Android simulation) or an Android Device
 
-## Get a fresh project
+### Installation
 
-When you're ready, run:
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/yourusername/macroscope.git
+    cd macroscope
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Run the app**:
+    - **Android**: `npm run android`
+    - **Web**: `npm run dev` (or `npx expo start --web`)
+    - **iOS**: `npm run ios`
+
+## 📱 Building the APK
+
+To generate a standalone release APK for Android:
 
 ```bash
-npm run reset-project
+cd android
+./gradlew assembleRelease
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+The output file will be located at:
+`android/app/build/outputs/apk/release/app-release.apk`
 
-## Learn more
+## 🔑 Configuration
 
-To learn more about developing your project with Expo, look at the following resources:
+To enable AI features, you must enter your **Gemini API Key** in the app settings (Gear icon). The key is stored securely on your device.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📄 License
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+MIT
