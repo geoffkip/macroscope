@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AI-Food-Tracker</string>
+    <string name="title_activity_main">AI-Food-Tracker</string>
+    <string name="package_name">org.example.aifoodtracker</string>
+    <string name="custom_url_scheme">org.example.aifoodtracker</string>
+</resources>

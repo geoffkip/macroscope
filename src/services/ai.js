@@ -16,12 +16,23 @@ export const analyzeImage = async (imageData, apiKey) => {
       Analyze this image of food. Identify the main dish and breakdown its estimated macronutrients.
       Return ONLY a valid JSON object with the following structure:
       {
-        "foodName": "Name of the dish",
-        "calories": 500,
-        "protein": 30,
-        "carbs": 60,
-        "fats": 20,
-        "description": "Brief description of the food item"
+        "items": [
+          {
+            "name": "Specific food item name (e.g. Grilled Chicken Breast)",
+            "calories": 150,
+            "protein": 25,
+            "carbs": 0,
+            "fats": 5,
+            "portion": "approximate portion size"
+          }
+        ],
+        "total": {
+          "calories": 500,
+          "protein": 30,
+          "carbs": 60,
+          "fats": 20
+        },
+        "description": "Brief summary of the meal"
       }
       Do not wrap in markdown code blocks. Just the raw JSON string.
     `;
