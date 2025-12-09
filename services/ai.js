@@ -56,7 +56,18 @@ export const analyzeImage = async (base64Image, apiKey) => {
 
     // Cleanup
     const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanText);
+
+    // Check for "Food not recognized" error (loose matching)
+    if (cleanText.toLowerCase().includes("food not recognized")) {
+      return { error: "Food not recognized in photo" };
+    }
+
+    try {
+      return JSON.parse(cleanText);
+    } catch (e) {
+      console.error("Failed to parse AI response:", cleanText);
+      throw new Error("Invalid response from AI");
+    }
 
   } catch (error) {
     console.error("AI Service Error:", error);

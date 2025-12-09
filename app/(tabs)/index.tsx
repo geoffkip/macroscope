@@ -162,7 +162,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="px-4 py-3 bg-white border-b border-gray-100">
+      <View className="px-4 py-3 bg-white border-b border-gray-100 pt-12">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-2xl font-bold text-gray-900">Macro<Text className="text-blue-600">Scope</Text></Text>
           <TouchableOpacity onPress={() => setShowSettings(true)} className="p-2 bg-gray-50 rounded-full">

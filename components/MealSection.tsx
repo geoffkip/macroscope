@@ -48,7 +48,7 @@ const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, isLoad
                     </View>
                 ) : (
                     meals.map((meal) => (
-                        <View key={meal.id} className="relative bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+                        <View key={meal.id} className="relative bg-white p-3 rounded-2xl border border-gray-100 shadow-sm pr-10">
                             <View className="flex-row justify-between items-start mb-2">
                                 <View className="flex-1">
                                     {meal.analysis.items && meal.analysis.items.map((item, idx) => (
@@ -67,7 +67,8 @@ const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, isLoad
 
                             <TouchableOpacity
                                 onPress={() => onDelete(meal.id)}
-                                className="absolute bottom-2 right-2 p-2"
+                                className="absolute top-2 right-2 p-2 bg-red-50 rounded-full z-50"
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <Trash2 size={16} color="#ef4444" />
                             </TouchableOpacity>
