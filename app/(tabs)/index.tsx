@@ -10,7 +10,7 @@ import DailyStats from '@/components/DailyStats';
 import MealSection from '@/components/MealSection';
 import { addMeal, getMealsByDate, getSetting, saveSetting, deleteMeal, updateMeal } from '@/services/db';
 import { analyzeImage, refineAnalysis, analyzeText } from '@/services/ai';
-import { initHealthConnect, requestHealthPermissions, syncMealToHealthConnect } from '@/services/health';
+import { initHealthConnect, requestHealthPermissions, syncMealToHealthConnect, deleteMealFromHealthConnect } from '@/services/health';
 
 export default function HomeScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -281,6 +281,9 @@ export default function HomeScreen() {
           style: "destructive",
           onPress: async () => {
             await deleteMeal(id);
+            if (Platform.OS === 'android') {
+              deleteMealFromHealthConnect(id).catch(err => console.log("HC delete err", err));
+            }
             loadMeals();
           }
         }
@@ -298,6 +301,53 @@ export default function HomeScreen() {
     }
     return acc;
   }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+  // Water Logic
+  const [waterAmount, setWaterAmount] = useState(0);
+  const [waterLogs, setWaterLogs] = useState([]); // Store details for deletion
+
+  useEffect(() => {
+    loadWater();
+  }, [currentDate]);
+
+  const loadWater = async () => {
+    try {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const { getWaterLogs } = require('@/services/db');
+      const logs = await getWaterLogs(dateStr);
+      setWaterLogs(logs); // Save logs
+      const total = logs.reduce((acc, log) => acc + log.amount, 0);
+      setWaterAmount(total);
+    } catch (e) { console.log("Water load err", e); }
+  };
+
+  const addWater = async (amount) => {
+    try {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const { addWaterLog } = require('@/services/db');
+      const { syncWaterToHealthConnect } = require('@/services/health');
+
+      const id = await addWaterLog(dateStr, amount);
+
+      if (Platform.OS === 'android') {
+        syncWaterToHealthConnect(id, amount, Date.now()).catch(e => console.log(e));
+      }
+      loadWater(); // Reload to get IDs and total
+    } catch (e) { Alert.alert("Error", "Failed to add water"); }
+  };
+
+  const removeWater = async (id) => {
+    try {
+      const { deleteWaterLog } = require('@/services/db');
+      const { deleteWaterFromHealthConnect } = require('@/services/health');
+
+      await deleteWaterLog(id);
+      if (Platform.OS === 'android') {
+        deleteWaterFromHealthConnect(id).catch(e => console.log(e));
+      }
+      loadWater();
+    } catch (e) { Alert.alert("Error", "Failed to delete water"); }
+  };
 
   const getMealsForSection = (type) => meals.filter(m => m.mealType === type);
 
@@ -346,6 +396,48 @@ export default function HomeScreen() {
 
       <ScrollView className="flex-1 px-4 py-6">
         <DailyStats totals={dailyTotals} targets={targets} />
+
+        {/* Hydration Card */}
+        <View className="bg-white p-4 rounded-2xl shadow-sm mb-6 border border-gray-100">
+          <View className="flex-row justify-between items-center mb-3">
+            <View className="flex-row items-center gap-2">
+              <View className="bg-blue-100 p-2 rounded-full">
+                <Text className="text-blue-600 font-bold">💧</Text>
+              </View>
+              <Text className="text-lg font-bold text-gray-800">Hydration</Text>
+            </View>
+            <Text className="text-xl font-bold text-blue-600">{waterAmount} ml</Text>
+          </View>
+
+          <View className="flex-row justify-between gap-3">
+            <TouchableOpacity onPress={() => addWater(250)} className="flex-1 bg-blue-50 py-3 rounded-xl items-center border border-blue-100">
+              <Text className="text-blue-700 font-semibold text-sm">+250ml</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => addWater(500)} className="flex-1 bg-blue-50 py-3 rounded-xl items-center border border-blue-100">
+              <Text className="text-blue-700 font-semibold text-sm">+500ml</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => addWater(750)} className="flex-1 bg-blue-50 py-3 rounded-xl items-center border border-blue-100">
+              <Text className="text-blue-700 font-semibold text-sm">+750ml</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Water Logs List */}
+          {waterLogs.length > 0 && (
+            <View className="mt-4 pt-3 border-t border-gray-100">
+              <Text className="text-xs font-semibold text-gray-500 mb-2">History</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {waterLogs.map(log => (
+                  <View key={log.id} className="bg-gray-50 rounded-lg px-3 py-1.5 flex-row items-center border border-gray-200">
+                    <Text className="text-gray-600 text-xs mr-2">{log.amount}ml</Text>
+                    <TouchableOpacity onPress={() => removeWater(log.id)} hitSlop={10}>
+                      <Text className="text-red-400 font-bold text-xs">✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Meal Sections */}
         {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => (
@@ -550,16 +642,46 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   onPress={async () => {
                     try {
-                      const initialized = await initHealthConnect();
-                      if (initialized) {
+                      // 1. Import status enum dynamically needed? No, logic is mainly by return value or status checker.
+                      // Ideally we import SdkAvailabilityStatus but it's not exported from service yet.
+                      // Let's modify service to export it or just use strings if we can, but enum is safer.
+
+                      const { initHealthConnect } = require('@/services/health');
+
+                      const result = await initHealthConnect();
+
+                      if (result === true) {
+                        // Already ready
+                        const { requestHealthPermissions } = require('@/services/health');
                         const granted = await requestHealthPermissions();
-                        if (granted) {
-                          Alert.alert("Success", "Health Connect configured.");
-                        } else {
-                          Alert.alert("Notice", "Health Connect permissions were not granted.");
-                        }
+                        if (granted) Alert.alert("Success", "Health Connect configured.");
+                        else Alert.alert("Notice", "Permissions not granted.");
                       } else {
-                        Alert.alert("Error", "Health Connect could not be initialized. Ensure Health Connect app is installed (if Android < 14).");
+                        // Handle Status Codes
+                        // 1 = AVAILABLE (should have returned true)
+                        // 2 = UNAVAILABLE
+                        // 3 = UNINSTALLED
+                        // 4 = UPDATE_REQUIRED
+
+                        if (result === 3) { // SDK_UNINSTALLED
+                          Alert.alert(
+                            "Install Health Connect",
+                            "Health Connect is not installed. Would you like to install it from the Play Store?",
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Install", onPress: () => {
+                                  const { Linking } = require('react-native');
+                                  Linking.openURL('market://details?id=com.google.android.apps.healthdata');
+                                }
+                              }
+                            ]
+                          );
+                        } else if (result === 4) { // UPDATE_REQUIRED
+                          Alert.alert("Update Required", "Please update Health Connect.");
+                        } else {
+                          Alert.alert("Error", "Health Connect is not supported on this device (Status: " + result + ")");
+                        }
                       }
                     } catch (e) {
                       Alert.alert("Error", "Failed to connect: " + e.message);

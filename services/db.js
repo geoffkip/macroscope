@@ -29,20 +29,26 @@ const initNativeDB = async () => {
         db = await SQLite.openDatabaseAsync(DB_NAME);
 
         await db.execAsync(`
-          PRAGMA journal_mode = WAL;
-          CREATE TABLE IF NOT EXISTS meals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            mealType TEXT NOT NULL,
-            data TEXT NOT NULL,
-            imageBase64 TEXT,
-            timestamp INTEGER
-          );
-          CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT
-          );
-        `);
+              PRAGMA journal_mode = WAL;
+              CREATE TABLE IF NOT EXISTS meals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                mealType TEXT NOT NULL,
+                data TEXT NOT NULL,
+                imageBase64 TEXT,
+                timestamp INTEGER
+              );
+              CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+              );
+              CREATE TABLE IF NOT EXISTS water_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                timestamp INTEGER
+              );
+            `);
 
         return db;
     } catch (error) {
@@ -162,5 +168,45 @@ export const deleteMeal = async (id) => {
             console.error("Failed to delete meal:", error);
             throw error;
         }
+    }
+};
+
+// --- Water API ---
+export const addWaterLog = async (date, amount) => {
+    if (Platform.OS === 'web') {
+        const logs = JSON.parse(localStorage.getItem('water_logs') || '[]');
+        const newLog = { id: Date.now(), date, amount, timestamp: Date.now() };
+        logs.push(newLog);
+        localStorage.setItem('water_logs', JSON.stringify(logs));
+        return newLog.id;
+    } else {
+        const database = await initNativeDB();
+        const result = await database.runAsync(
+            'INSERT INTO water_logs (date, amount, timestamp) VALUES (?, ?, ?)',
+            date, amount, Date.now()
+        );
+        return result.lastInsertRowId;
+    }
+};
+
+export const getWaterLogs = async (date) => {
+    if (Platform.OS === 'web') {
+        const logs = JSON.parse(localStorage.getItem('water_logs') || '[]');
+        return logs.filter(l => l.date === date);
+    } else {
+        const database = await initNativeDB();
+        const rows = await database.getAllAsync('SELECT * FROM water_logs WHERE date = ?', date);
+        return rows;
+    }
+};
+
+export const deleteWaterLog = async (id) => {
+    if (Platform.OS === 'web') {
+        let logs = JSON.parse(localStorage.getItem('water_logs') || '[]');
+        logs = logs.filter(l => l.id !== id);
+        localStorage.setItem('water_logs', JSON.stringify(logs));
+    } else {
+        const database = await initNativeDB();
+        await database.runAsync('DELETE FROM water_logs WHERE id = ?', id);
     }
 };
