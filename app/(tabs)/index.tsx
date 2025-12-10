@@ -375,7 +375,12 @@ export default function HomeScreen() {
       <View className="px-4 py-3 bg-white border-b border-gray-100 pt-12">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-2xl font-bold text-gray-900">Macro<Text className="text-blue-600">Scope</Text></Text>
-          <TouchableOpacity onPress={() => setShowSettings(true)} className="p-2 bg-gray-50 rounded-full">
+          <TouchableOpacity
+            onPress={() => setShowSettings(true)}
+            className="p-2 bg-gray-50 rounded-full"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            activeOpacity={0.6}
+          >
             <Settings size={24} color="#4b5563" />
           </TouchableOpacity>
         </View>
