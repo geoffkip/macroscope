@@ -29,7 +29,7 @@
 - **Whoop/Fitbit Compatible**: Data flows to connected fitness apps
 - **Smart Upsert**: Editing a meal updates the existing Health Connect record
 - **Delete Sync**: Deleting a meal/water log removes it from Health Connect
-- **Android 16 Ready**: Full support for the latest Android version
+- **Android 14+ Ready**: Full support for the latest Android versions
 
 ### 📱 User Experience
 - **Offline-First**: Uses **SQLite** for robust local storage
@@ -91,8 +91,6 @@ cd android && ./gradlew assembleRelease
 
 **Output**: `android/app/build/outputs/apk/release/app-release.apk`
 
-Or use the pre-built APK in the `release/` folder.
-
 ## 🔑 Configuration
 
 ### Gemini API Key
@@ -129,37 +127,8 @@ macroscope/
 │   └── health.js          # Health Connect sync
 ├── plugins/
 │   └── withHealthConnect.js  # Expo config plugin
-├── assets/                 # Images, icons, fonts
-└── release/               # Pre-built APK
+└── assets/                 # Images, icons, fonts
 ```
-
-## 📝 Changelog
-
-### v3.14 (Current)
-- 🐛 Fixed water logging bug
-- 🎨 Fixed API key visibility in settings
-- 🖼️ New app logo
-
-### v3.13
-- ✅ Android 16 Health Connect support
-- 📋 Added `activity-alias` for VIEW_PERMISSION_USAGE
-
-### v3.12
-- 🔧 Fixed Health Connect delegate registration
-
-### v3.11
-- 📄 Fixed manifest rationale intent placement
-
-### v3.10
-- 📲 Added install prompt for missing Health Connect app
-
-### v3.8
-- 💧 Water tracking with delete functionality
-- 🔄 Health Connect hydration sync
-
-### v3.6
-- 🔁 Smart upsert for meal records
-- 🗑️ Delete sync to Health Connect
 
 ## 🤝 Contributing
 
