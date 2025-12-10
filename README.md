@@ -12,6 +12,7 @@
 - **Snap & Track**: Instantly analyze meals using your camera
 - **Image Upload**: Upload food photos from your gallery
 - **Text Mode**: Type "Oatmeal with blueberries" to log meals without a photo
+- **🔍 Food Search**: Search 300,000+ foods from the USDA database for manual entry
 
 ### 🧠 Advanced AI (Gemini 2.5 Flash)
 - **Smart Recognition**: Identifies food items with high accuracy
@@ -44,6 +45,7 @@
 |-----------|------------|
 | Framework | React Native (Expo) |
 | AI Model | Gemini 2.5 Flash |
+| Food Database | USDA FoodData Central |
 | Styling | NativeWind (Tailwind CSS) |
 | Database | expo-sqlite |
 | Health Sync | react-native-health-connect |

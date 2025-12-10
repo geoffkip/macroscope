@@ -1,7 +1,7 @@
 // USDA FoodData Central API Service
 // Free API: 1,000 requests/hour with API key
 
-const USDA_API_KEY = 'DEMO_KEY'; // Works for basic testing, get real key at fdc.nal.usda.gov
+const USDA_API_KEY = process.env.EXPO_PUBLIC_USDA_API_KEY || 'DEMO_KEY';
 const BASE_URL = 'https://api.nal.usda.gov/fdc/v1';
 
 // Nutrient IDs in USDA database
