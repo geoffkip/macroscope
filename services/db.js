@@ -181,6 +181,8 @@ export const addWaterLog = async (date, amount) => {
         return newLog.id;
     } else {
         const database = await initNativeDB();
+        if (!database) throw new Error("Database not initialized");
+
         const result = await database.runAsync(
             'INSERT INTO water_logs (date, amount, timestamp) VALUES (?, ?, ?)',
             date, amount, Date.now()

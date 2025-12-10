@@ -607,8 +607,9 @@ export default function HomeScreen() {
               <View className="mb-6">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">Gemini API Key</Text>
                 <TextInput
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
                   placeholder="API Key"
+                  placeholderTextColor="#9ca3af"
                   value={apiKey}
                   onChangeText={setApiKey}
                   autoCapitalize="none"
