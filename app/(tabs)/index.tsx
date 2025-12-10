@@ -330,15 +330,19 @@ export default function HomeScreen() {
       const id = await addWaterLog(dateStr, amount);
       console.log("Water added to DB with ID:", id);
 
-      // Step 2: Sync to Health Connect (fire and forget - errors don't affect local storage)
+      // Step 2: Sync to Health Connect and show result
       if (Platform.OS === 'android') {
         try {
           const { syncWaterToHealthConnect } = require('@/services/health');
-          syncWaterToHealthConnect(id, amount, Date.now())
-            .then(() => console.log("Water synced to HC"))
-            .catch((e: any) => console.log("HC water sync failed (non-blocking):", e));
-        } catch (syncErr) {
-          console.log("HC module load failed (non-blocking):", syncErr);
+          const syncResult = await syncWaterToHealthConnect(id, amount, Date.now());
+          if (syncResult) {
+            console.log("Water synced to HC successfully");
+          } else {
+            console.log("Water sync to HC returned false");
+          }
+        } catch (syncErr: any) {
+          console.log("HC water sync error:", syncErr);
+          Alert.alert("Health Connect", "Water saved locally but sync failed: " + (syncErr?.message || syncErr));
         }
       }
 

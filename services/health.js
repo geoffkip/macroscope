@@ -52,6 +52,24 @@ export const requestHealthPermissions = async () => {
     }
 };
 
+// Helper to get local ISO string with timezone offset
+const getLocalISOString = (date) => {
+    const tzOffset = -date.getTimezoneOffset();
+    const sign = tzOffset >= 0 ? '+' : '-';
+    const hours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+    const minutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}.${ms}${sign}${hours}:${minutes}`;
+};
+
 export const syncWaterToHealthConnect = async (id, amount, timestamp) => {
     console.log("=== WATER SYNC START ===");
     console.log("Params: id=", id, "amount=", amount, "timestamp=", timestamp);
@@ -67,8 +85,12 @@ export const syncWaterToHealthConnect = async (id, amount, timestamp) => {
             return false;
         }
 
-        const startTime = new Date(timestamp).toISOString();
-        const endTime = new Date(timestamp + 1000).toISOString(); // 1 second duration instead of instant
+        const startDate = new Date(timestamp);
+        const endDate = new Date(timestamp + 1000); // 1 second duration
+
+        // Use local time with timezone offset (NOT UTC!)
+        const startTime = getLocalISOString(startDate);
+        const endTime = getLocalISOString(endDate);
         const uniqueId = `water_${id}`;
 
         const record = {
@@ -112,6 +134,9 @@ export const deleteWaterFromHealthConnect = async (id) => {
 export const syncMealToHealthConnect = async (meal) => {
     if (!meal || !meal.analysis || !meal.analysis.total || !meal.id) return;
 
+    console.log("=== MEAL SYNC START ===");
+    console.log("Meal ID:", meal.id, "Type:", meal.mealType);
+
     try {
         // Ensure HC is initialized before writing
         const initResult = await initialize();
@@ -121,30 +146,36 @@ export const syncMealToHealthConnect = async (meal) => {
         }
 
         const { calories, protein, carbs, fats } = meal.analysis.total;
-        const startTime = new Date(meal.timestamp).toISOString();
-        const endTime = new Date(meal.timestamp + 60000).toISOString(); // 1 min duration
+        const startDate = new Date(meal.timestamp);
+        const endDate = new Date(meal.timestamp + 60000); // 1 min duration
+
+        // Use local time with timezone offset (NOT UTC!)
+        const startTime = getLocalISOString(startDate);
+        const endTime = getLocalISOString(endDate);
 
         // Unique ID for Upsert (Update/Insert)
         // Health Connect will overwrite any record with this same clientRecordId
         const uniqueId = `meal_${meal.id}`;
 
-        await writeRecords([
-            {
-                recordType: 'Nutrition',
-                startTime,
-                endTime,
-                energy: { value: calories, unit: 'kilocalories' },
-                protein: { value: protein, unit: 'grams' },
-                totalCarbohydrate: { value: carbs, unit: 'grams' },
-                totalFat: { value: fats, unit: 'grams' },
-                name: meal.mealType || 'Meal',
-                metadata: {
-                    clientRecordId: uniqueId,
-                    clientRecordVersion: 1, // Optional versioning
-                }
-            },
-        ]);
-        console.log("Meal synced to Health Connect (Upsert) - ID:", uniqueId);
+        const record = {
+            recordType: 'Nutrition',
+            startTime,
+            endTime,
+            energy: { value: calories, unit: 'kilocalories' },
+            protein: { value: protein, unit: 'grams' },
+            totalCarbohydrate: { value: carbs, unit: 'grams' },
+            totalFat: { value: fats, unit: 'grams' },
+            name: meal.mealType || 'Meal',
+            metadata: {
+                clientRecordId: uniqueId,
+                clientRecordVersion: 1,
+            }
+        };
+
+        console.log("Writing meal record:", JSON.stringify(record, null, 2));
+        const result = await writeRecords([record]);
+        console.log("Meal write result:", JSON.stringify(result, null, 2));
+        console.log("=== MEAL SYNC SUCCESS ===");
     } catch (e) {
         console.error("Failed to sync meal:", e);
     }
