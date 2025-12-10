@@ -93,7 +93,7 @@ const withHealthConnectActivity = (config) => {
         // 1. Add Import
         let newSrc = src;
         if (!newSrc.includes(permissionDelegateImport)) {
-            newSrc = newSrc.replace(/package com\.anonymous\.macroscopenative/, `package com.anonymous.macroscopenative\n\n${permissionDelegateImport}`);
+            newSrc = newSrc.replace(/package com\.geoffreykip\.macroscope/, `package com.geoffreykip.macroscope\n\n${permissionDelegateImport}`);
         }
 
         // 2. Add Delegate in onCreate
