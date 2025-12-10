@@ -39,6 +39,12 @@
 - **Date Navigation**: Swipe between days to view history
 - **Native Performance**: Built with **React Native** & **Expo**
 
+### 📊 Analytics & Trends
+- **Weekly/Monthly Charts**: Visualize calorie and macro trends over time
+- **Bar Charts**: See daily calorie intake at a glance
+- **Line Charts**: Track protein, carbs, and fats over 7 or 30 days
+- **Summary Stats**: Average calories, protein, and logging streak
+
 ## 🛠️ Tech Stack
 
 | Component | Technology |

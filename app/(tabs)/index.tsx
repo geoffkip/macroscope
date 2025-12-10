@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, Modal, Image, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { format, addDays, subDays } from 'date-fns';
-import { Settings, ChevronLeft, ChevronRight, X, Camera as CameraIcon, Image as ImageIcon, Calendar as CalendarIcon, Edit2, Keyboard, Search } from 'lucide-react-native';
+import { Settings, ChevronLeft, ChevronRight, X, Camera as CameraIcon, Image as ImageIcon, Calendar as CalendarIcon, Edit2, Keyboard, Search, TrendingUp } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -12,6 +12,7 @@ import { addMeal, getMealsByDate, getSetting, saveSetting, deleteMeal, updateMea
 import { analyzeImage, refineAnalysis, analyzeText } from '@/services/ai';
 import { initHealthConnect, requestHealthPermissions, syncMealToHealthConnect, deleteMealFromHealthConnect } from '@/services/health';
 import { searchFoods, formatFoodForMeal } from '@/services/usda';
+import NutritionCharts from '@/components/NutritionCharts';
 
 export default function HomeScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -39,6 +40,7 @@ export default function HomeScreen() {
   // Settings & Targets
   const [apiKey, setApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
 
   // Macro Targets State
   const [targets, setTargets] = useState({
@@ -424,14 +426,24 @@ export default function HomeScreen() {
       <View className="px-4 py-3 bg-white border-b border-gray-100 pt-12">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-2xl font-bold text-gray-900">Macro<Text className="text-blue-600">Scope</Text></Text>
-          <TouchableOpacity
-            onPress={() => setShowSettings(true)}
-            className="p-2 bg-gray-50 rounded-full"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            activeOpacity={0.6}
-          >
-            <Settings size={24} color="#4b5563" />
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity
+              onPress={() => setShowCharts(true)}
+              className="p-2 bg-blue-50 rounded-full"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.6}
+            >
+              <TrendingUp size={24} color="#2563eb" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowSettings(true)}
+              className="p-2 bg-gray-50 rounded-full"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.6}
+            >
+              <Settings size={24} color="#4b5563" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Date Nav */}
@@ -858,6 +870,9 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Nutrition Charts */}
+      <NutritionCharts visible={showCharts} onClose={() => setShowCharts(false)} />
     </SafeAreaView>
   );
 }
