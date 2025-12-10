@@ -23,39 +23,64 @@ const WebDB = {
 
 // --- Native Implementation (SQLite) ---
 let db = null;
+let dbInitPromise = null;
+
 const initNativeDB = async () => {
-    if (db) return db;
-    try {
-        db = await SQLite.openDatabaseAsync(DB_NAME);
-
-        await db.execAsync(`
-              PRAGMA journal_mode = WAL;
-              CREATE TABLE IF NOT EXISTS meals (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                mealType TEXT NOT NULL,
-                data TEXT NOT NULL,
-                imageBase64 TEXT,
-                timestamp INTEGER
-              );
-              CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT
-              );
-              CREATE TABLE IF NOT EXISTS water_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                amount INTEGER NOT NULL,
-                timestamp INTEGER
-              );
-            `);
-
-        return db;
-    } catch (error) {
-        console.error("Database initialization failed:", error);
-        db = null; // Reset on failure
-        throw error;
+    // If already initialized and valid, return
+    if (db) {
+        try {
+            // Test if connection is still valid
+            await db.getFirstAsync('SELECT 1');
+            return db;
+        } catch (testError) {
+            console.log("DB connection stale, reinitializing...");
+            db = null;
+            dbInitPromise = null;
+        }
     }
+
+    // Prevent concurrent initialization
+    if (dbInitPromise) {
+        return dbInitPromise;
+    }
+
+    dbInitPromise = (async () => {
+        try {
+            db = await SQLite.openDatabaseAsync(DB_NAME);
+
+            await db.execAsync(`
+                  PRAGMA journal_mode = WAL;
+                  CREATE TABLE IF NOT EXISTS meals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    mealType TEXT NOT NULL,
+                    data TEXT NOT NULL,
+                    imageBase64 TEXT,
+                    timestamp INTEGER
+                  );
+                  CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                  );
+                  CREATE TABLE IF NOT EXISTS water_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    timestamp INTEGER
+                  );
+                `);
+
+            console.log("Database initialized successfully");
+            return db;
+        } catch (error) {
+            console.error("Database initialization failed:", error);
+            db = null;
+            dbInitPromise = null;
+            throw error;
+        }
+    })();
+
+    return dbInitPromise;
 };
 
 // --- Universal API ---

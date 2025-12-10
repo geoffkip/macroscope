@@ -53,26 +53,47 @@ export const requestHealthPermissions = async () => {
 };
 
 export const syncWaterToHealthConnect = async (id, amount, timestamp) => {
-    const startTime = new Date(timestamp).toISOString();
-    const endTime = new Date(timestamp).toISOString(); // Point in time
-    const uniqueId = `water_${id}`;
+    console.log("=== WATER SYNC START ===");
+    console.log("Params: id=", id, "amount=", amount, "timestamp=", timestamp);
 
     try {
-        await writeRecords([
-            {
-                recordType: 'Hydration',
-                startTime,
-                endTime,
-                volume: { value: amount, unit: 'milliliters' },
-                metadata: {
-                    clientRecordId: uniqueId,
-                    clientRecordVersion: 1,
-                }
-            },
-        ]);
-        console.log("Water synced to Health Connect - ID:", uniqueId);
+        // Ensure HC is initialized before writing
+        console.log("Initializing Health Connect...");
+        const initResult = await initialize();
+        console.log("Init result:", initResult);
+
+        if (!initResult) {
+            console.log("Health Connect not initialized, skipping water sync");
+            return false;
+        }
+
+        const startTime = new Date(timestamp).toISOString();
+        const endTime = new Date(timestamp + 1000).toISOString(); // 1 second duration instead of instant
+        const uniqueId = `water_${id}`;
+
+        const record = {
+            recordType: 'Hydration',
+            startTime,
+            endTime,
+            volume: { value: amount, unit: 'milliliters' },
+            metadata: {
+                clientRecordId: uniqueId,
+                clientRecordVersion: 1,
+            }
+        };
+
+        console.log("Writing record:", JSON.stringify(record, null, 2));
+
+        const result = await writeRecords([record]);
+        console.log("Write result:", JSON.stringify(result, null, 2));
+        console.log("=== WATER SYNC SUCCESS ===");
+        return true;
     } catch (e) {
-        console.log("Failed to sync water:", e);
+        console.error("=== WATER SYNC FAILED ===");
+        console.error("Error:", e);
+        console.error("Error message:", e?.message);
+        console.error("Error stack:", e?.stack);
+        return false;
     }
 };
 
@@ -91,15 +112,22 @@ export const deleteWaterFromHealthConnect = async (id) => {
 export const syncMealToHealthConnect = async (meal) => {
     if (!meal || !meal.analysis || !meal.analysis.total || !meal.id) return;
 
-    const { calories, protein, carbs, fats } = meal.analysis.total;
-    const startTime = new Date(meal.timestamp).toISOString();
-    const endTime = new Date(meal.timestamp + 60000).toISOString(); // 1 min duration
-
-    // Unique ID for Upsert (Update/Insert)
-    // Health Connect will overwrite any record with this same clientRecordId
-    const uniqueId = `meal_${meal.id}`;
-
     try {
+        // Ensure HC is initialized before writing
+        const initResult = await initialize();
+        if (!initResult) {
+            console.log("Health Connect not initialized, skipping meal sync");
+            return;
+        }
+
+        const { calories, protein, carbs, fats } = meal.analysis.total;
+        const startTime = new Date(meal.timestamp).toISOString();
+        const endTime = new Date(meal.timestamp + 60000).toISOString(); // 1 min duration
+
+        // Unique ID for Upsert (Update/Insert)
+        // Health Connect will overwrite any record with this same clientRecordId
+        const uniqueId = `meal_${meal.id}`;
+
         await writeRecords([
             {
                 recordType: 'Nutrition',
