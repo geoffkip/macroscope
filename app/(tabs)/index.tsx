@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, Modal, Image, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { format, addDays, subDays } from 'date-fns';
-import { Settings, ChevronLeft, ChevronRight, X, Camera as CameraIcon, Image as ImageIcon, Calendar as CalendarIcon, Edit2, Keyboard } from 'lucide-react-native';
+import { Settings, ChevronLeft, ChevronRight, X, Camera as CameraIcon, Image as ImageIcon, Calendar as CalendarIcon, Edit2, Keyboard, Search } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -11,6 +11,7 @@ import MealSection from '@/components/MealSection';
 import { addMeal, getMealsByDate, getSetting, saveSetting, deleteMeal, updateMeal } from '@/services/db';
 import { analyzeImage, refineAnalysis, analyzeText } from '@/services/ai';
 import { initHealthConnect, requestHealthPermissions, syncMealToHealthConnect, deleteMealFromHealthConnect } from '@/services/health';
+import { searchFoods, formatFoodForMeal } from '@/services/usda';
 
 export default function HomeScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -28,6 +29,12 @@ export default function HomeScreen() {
   // Text Entry Modal State
   const [showTextModal, setShowTextModal] = useState(false);
   const [textInput, setTextInput] = useState('');
+
+  // Food Search Modal State
+  const [showFoodSearch, setShowFoodSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Settings & Targets
   const [apiKey, setApiKey] = useState('');
@@ -143,6 +150,48 @@ export default function HomeScreen() {
     setActiveMealType(type);
     setTextInput('');
     setShowTextModal(true);
+  };
+
+  const openFoodSearch = (type) => {
+    setActiveMealType(type);
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowFoodSearch(true);
+  };
+
+  const handleFoodSearch = async () => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return;
+    setIsSearching(true);
+    try {
+      const results = await searchFoods(searchQuery);
+      setSearchResults(results);
+    } catch (e) {
+      Alert.alert("Search Error", "Failed to search foods. Please try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectFood = async (food) => {
+    setShowFoodSearch(false);
+    setIsLoading(true);
+    try {
+      const analysis = formatFoodForMeal(food, 1);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const mealId = await addMeal(dateStr, activeMealType, analysis);
+      await loadMeals();
+
+      // Sync to Health Connect
+      try {
+        await syncMealToHealthConnect({ id: mealId, mealType: activeMealType, analysis, timestamp: Date.now() });
+      } catch (e) { console.log("Health sync failed:", e); }
+
+      Alert.alert("Added!", `${food.name} logged to ${activeMealType}`);
+    } catch (e) {
+      Alert.alert("Error", "Failed to add food");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleTextAnalysis = async () => {
@@ -471,6 +520,14 @@ export default function HomeScreen() {
               </View>
               <View className="flex-row gap-2">
                 <TouchableOpacity
+                  onPress={() => openFoodSearch(type)}
+                  disabled={isLoading}
+                  className={`items-center justify-center bg-green-100 w-8 h-8 rounded-full ${isLoading ? 'opacity-50' : ''}`}
+                  hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                >
+                  <Search size={16} color="#16a34a" />
+                </TouchableOpacity>
+                <TouchableOpacity
                   onPress={() => openTextEntry(type)}
                   disabled={isLoading}
                   className={`items-center justify-center bg-gray-100 w-8 h-8 rounded-full ${isLoading ? 'opacity-50' : ''}`}
@@ -572,6 +629,80 @@ export default function HomeScreen() {
             >
               <Text className="text-white font-bold font-medium">Analyze</Text>
             </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Food Search Modal */}
+      <Modal visible={showFoodSearch} animationType="slide" transparent onRequestClose={() => setShowFoodSearch(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6 h-5/6">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-bold text-gray-900">Search Foods</Text>
+              <TouchableOpacity onPress={() => setShowFoodSearch(false)}>
+                <X size={24} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row gap-2 mb-4">
+              <TextInput
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                placeholder="Search USDA database..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleFoodSearch}
+                returnKeyType="search"
+                autoFocus
+              />
+              <TouchableOpacity
+                onPress={handleFoodSearch}
+                disabled={isSearching}
+                className="bg-green-600 rounded-xl px-4 items-center justify-center"
+              >
+                {isSearching ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Search size={20} color="white" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-xs text-gray-400 mb-3">
+              Data from USDA FoodData Central • Values per 100g
+            </Text>
+
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+              {searchResults.length === 0 && !isSearching && (
+                <View className="items-center py-8">
+                  <Search size={48} color="#d1d5db" />
+                  <Text className="text-gray-400 mt-2">Search for foods like "chicken breast"</Text>
+                </View>
+              )}
+
+              {searchResults.map((food, index) => (
+                <TouchableOpacity
+                  key={food.fdcId || index}
+                  onPress={() => handleSelectFood(food)}
+                  className="bg-gray-50 rounded-xl p-4 mb-2 border border-gray-100"
+                >
+                  <Text className="font-semibold text-gray-800 mb-1" numberOfLines={2}>{food.name}</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    <Text className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+                      {food.nutrients.calories} kcal
+                    </Text>
+                    <Text className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      P: {food.nutrients.protein}g
+                    </Text>
+                    <Text className="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">
+                      C: {food.nutrients.carbs}g
+                    </Text>
+                    <Text className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                      F: {food.nutrients.fats}g
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
