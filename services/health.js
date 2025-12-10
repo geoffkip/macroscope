@@ -1,4 +1,4 @@
-import { initialize, requestPermission, readRecords, writeRecords, getGrantedPermissions, getSdkStatus, SdkAvailabilityStatus } from 'react-native-health-connect';
+import { initialize, requestPermission, readRecords, insertRecords, getGrantedPermissions, getSdkStatus, SdkAvailabilityStatus } from 'react-native-health-connect';
 
 export const checkHealthConnectStatus = async () => {
     try {
@@ -52,6 +52,26 @@ export const requestHealthPermissions = async () => {
     }
 };
 
+// Helper to verify permissions are granted
+const ensurePermissions = async () => {
+    try {
+        const granted = await getGrantedPermissions();
+        console.log("Granted permissions:", JSON.stringify(granted, null, 2));
+
+        const hasHydrationWrite = granted.some(p =>
+            p.recordType === 'Hydration' && p.accessType === 'write'
+        );
+        const hasNutritionWrite = granted.some(p =>
+            p.recordType === 'Nutrition' && p.accessType === 'write'
+        );
+
+        return { hasHydrationWrite, hasNutritionWrite, granted };
+    } catch (e) {
+        console.error("Failed to get permissions:", e);
+        return { hasHydrationWrite: false, hasNutritionWrite: false, granted: [] };
+    }
+};
+
 // Helper to get local ISO string with timezone offset
 const getLocalISOString = (date) => {
     const tzOffset = -date.getTimezoneOffset();
@@ -81,8 +101,21 @@ export const syncWaterToHealthConnect = async (id, amount, timestamp) => {
         console.log("Init result:", initResult);
 
         if (!initResult) {
-            console.log("Health Connect not initialized, skipping water sync");
+            console.error("Health Connect not initialized, skipping water sync");
             return false;
+        }
+
+        // Check permissions before attempting to write
+        const { hasHydrationWrite } = await ensurePermissions();
+        if (!hasHydrationWrite) {
+            console.log("Missing Hydration write permission, requesting...");
+            await requestPermission([{ accessType: 'write', recordType: 'Hydration' }]);
+            // Re-check after requesting
+            const recheck = await ensurePermissions();
+            if (!recheck.hasHydrationWrite) {
+                console.error("Hydration write permission still not granted");
+                return false;
+            }
         }
 
         const startDate = new Date(timestamp);
@@ -106,8 +139,8 @@ export const syncWaterToHealthConnect = async (id, amount, timestamp) => {
 
         console.log("Writing record:", JSON.stringify(record, null, 2));
 
-        const result = await writeRecords([record]);
-        console.log("Write result:", JSON.stringify(result, null, 2));
+        const result = await insertRecords([record]);
+        console.log("Insert result:", JSON.stringify(result, null, 2));
         console.log("=== WATER SYNC SUCCESS ===");
         return true;
     } catch (e) {
@@ -141,8 +174,21 @@ export const syncMealToHealthConnect = async (meal) => {
         // Ensure HC is initialized before writing
         const initResult = await initialize();
         if (!initResult) {
-            console.log("Health Connect not initialized, skipping meal sync");
-            return;
+            console.error("Health Connect not initialized, skipping meal sync");
+            return false;
+        }
+
+        // Check permissions before attempting to write
+        const { hasNutritionWrite } = await ensurePermissions();
+        if (!hasNutritionWrite) {
+            console.log("Missing Nutrition write permission, requesting...");
+            await requestPermission([{ accessType: 'write', recordType: 'Nutrition' }]);
+            // Re-check after requesting
+            const recheck = await ensurePermissions();
+            if (!recheck.hasNutritionWrite) {
+                console.error("Nutrition write permission still not granted");
+                return false;
+            }
         }
 
         const { calories, protein, carbs, fats } = meal.analysis.total;
@@ -172,10 +218,11 @@ export const syncMealToHealthConnect = async (meal) => {
             }
         };
 
-        console.log("Writing meal record:", JSON.stringify(record, null, 2));
-        const result = await writeRecords([record]);
-        console.log("Meal write result:", JSON.stringify(result, null, 2));
+        console.log("Inserting meal record:", JSON.stringify(record, null, 2));
+        const result = await insertRecords([record]);
+        console.log("Meal insert result:", JSON.stringify(result, null, 2));
         console.log("=== MEAL SYNC SUCCESS ===");
+        return true;
     } catch (e) {
         console.error("Failed to sync meal:", e);
     }

@@ -14,6 +14,12 @@ const withHealthConnectManifest = (config) => {
                 action: [{ $: { 'android:name': 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE' } }]
             };
 
+            // Add VIEW_PERMISSION_USAGE_FOR_PERIOD intent filter (required for Android 14+)
+            const permissionUsageIntent = {
+                action: [{ $: { 'android:name': 'android.intent.action.VIEW_PERMISSION_USAGE_FOR_PERIOD' } }],
+                category: [{ $: { 'android:name': 'android.intent.category.HEALTH_PERMISSIONS' } }]
+            };
+
             mainActivity['intent-filter'] = mainActivity['intent-filter'] || [];
             const hasRationale = mainActivity['intent-filter'].some(f =>
                 f.action?.some(a => a.$['android:name'] === 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE')
@@ -21,6 +27,15 @@ const withHealthConnectManifest = (config) => {
 
             if (!hasRationale) {
                 mainActivity['intent-filter'].push(rationaleIntent);
+            }
+
+            // Add permission usage intent filter
+            const hasPermissionUsage = mainActivity['intent-filter'].some(f =>
+                f.action?.some(a => a.$['android:name'] === 'android.intent.action.VIEW_PERMISSION_USAGE_FOR_PERIOD')
+            );
+
+            if (!hasPermissionUsage) {
+                mainActivity['intent-filter'].push(permissionUsageIntent);
             }
         }
 
