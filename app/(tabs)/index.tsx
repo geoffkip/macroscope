@@ -321,19 +321,33 @@ export default function HomeScreen() {
     } catch (e) { console.log("Water load err", e); }
   };
 
-  const addWater = async (amount) => {
+  const addWater = async (amount: number) => {
+    const dateStr = format(currentDate, 'yyyy-MM-dd');
+
     try {
-      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      // Step 1: Add to local database (must succeed)
       const { addWaterLog } = require('@/services/db');
-      const { syncWaterToHealthConnect } = require('@/services/health');
-
       const id = await addWaterLog(dateStr, amount);
+      console.log("Water added to DB with ID:", id);
 
+      // Step 2: Sync to Health Connect (fire and forget - errors don't affect local storage)
       if (Platform.OS === 'android') {
-        syncWaterToHealthConnect(id, amount, Date.now()).catch(e => console.log(e));
+        try {
+          const { syncWaterToHealthConnect } = require('@/services/health');
+          syncWaterToHealthConnect(id, amount, Date.now())
+            .then(() => console.log("Water synced to HC"))
+            .catch((e: any) => console.log("HC water sync failed (non-blocking):", e));
+        } catch (syncErr) {
+          console.log("HC module load failed (non-blocking):", syncErr);
+        }
       }
-      loadWater(); // Reload to get IDs and total
-    } catch (e) { Alert.alert("Error", "Failed to add water"); }
+
+      // Step 3: Refresh UI
+      loadWater();
+    } catch (e: any) {
+      console.error("Water add error:", e);
+      Alert.alert("Error", "Failed to add water: " + (e?.message || e));
+    }
   };
 
   const removeWater = async (id) => {
