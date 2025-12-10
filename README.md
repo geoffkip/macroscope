@@ -12,6 +12,7 @@
 - **Snap & Track**: Instantly analyze meals using your camera
 - **Image Upload**: Upload food photos from your gallery
 - **Text Mode**: Type "Oatmeal with blueberries" to log meals without a photo
+- **🔍 Food Search**: Search 300,000+ foods from the USDA database for manual entry
 
 ### 🧠 Advanced AI (Gemini 2.5 Flash)
 - **Smart Recognition**: Identifies food items with high accuracy
@@ -38,12 +39,19 @@
 - **Date Navigation**: Swipe between days to view history
 - **Native Performance**: Built with **React Native** & **Expo**
 
+### 📊 Analytics & Trends
+- **Weekly/Monthly Charts**: Visualize calorie and macro trends over time
+- **Bar Charts**: See daily calorie intake at a glance
+- **Line Charts**: Track protein, carbs, and fats over 7 or 30 days
+- **Summary Stats**: Average calories, protein, and logging streak
+
 ## 🛠️ Tech Stack
 
 | Component | Technology |
 |-----------|------------|
 | Framework | React Native (Expo) |
 | AI Model | Gemini 2.5 Flash |
+| Food Database | USDA FoodData Central |
 | Styling | NativeWind (Tailwind CSS) |
 | Database | expo-sqlite |
 | Health Sync | react-native-health-connect |

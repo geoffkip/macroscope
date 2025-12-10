@@ -237,3 +237,48 @@ export const deleteWaterLog = async (id) => {
         await database.runAsync('DELETE FROM water_logs WHERE id = ?', id);
     }
 };
+
+// Get meals for date range (for charts)
+export const getMealsByDateRange = async (startDate, endDate) => {
+    if (Platform.OS === 'web') {
+        const meals = await WebDB.getMeals();
+        return meals
+            .filter(meal => meal.date >= startDate && meal.date <= endDate)
+            .map(meal => ({
+                ...meal,
+                analysis: typeof meal.data === 'string' ? JSON.parse(meal.data) : meal.data
+            }));
+    } else {
+        const database = await initNativeDB();
+        const rows = await database.getAllAsync(
+            'SELECT * FROM meals WHERE date >= ? AND date <= ? ORDER BY date ASC',
+            startDate,
+            endDate
+        );
+        return rows.map(row => ({
+            ...row,
+            analysis: JSON.parse(row.data)
+        }));
+    }
+};
+
+// Aggregate meals by date for charts
+export const getAggregatedMealData = async (startDate, endDate) => {
+    const meals = await getMealsByDateRange(startDate, endDate);
+
+    // Group by date
+    const grouped = {};
+    meals.forEach(meal => {
+        if (!grouped[meal.date]) {
+            grouped[meal.date] = { calories: 0, protein: 0, carbs: 0, fats: 0 };
+        }
+        if (meal.analysis && meal.analysis.total) {
+            grouped[meal.date].calories += meal.analysis.total.calories || 0;
+            grouped[meal.date].protein += meal.analysis.total.protein || 0;
+            grouped[meal.date].carbs += meal.analysis.total.carbs || 0;
+            grouped[meal.date].fats += meal.analysis.total.fats || 0;
+        }
+    });
+
+    return grouped;
+};

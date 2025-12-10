@@ -31,7 +31,7 @@ const MealSection = ({ title, meals, onAddPhoto, onUploadPhoto, onDelete, onRefi
                     </View>
                 ) : (
                     meals.map((meal) => (
-                        <View key={meal.id} className="relative bg-white p-3 rounded-2xl border border-gray-100 shadow-sm pr-10">
+                        <View key={meal.id} className="relative bg-white p-3 rounded-2xl border border-gray-100 shadow-sm pr-20">
                             <View className="flex-row justify-between items-start mb-2">
                                 <View className="flex-1">
                                     {meal.analysis.items && meal.analysis.items.map((item, idx) => (
