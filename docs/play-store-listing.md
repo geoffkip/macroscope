@@ -62,7 +62,7 @@ food tracker, calorie counter, macro tracker, nutrition, health connect, AI food
 Everyone
 
 ## Contact Email
-geoffreykip@gmail.com
+g_kip@live.com
 
 ## Privacy Policy URL
 https://geoffreykip.github.io/macroscope/privacy-policy.html
